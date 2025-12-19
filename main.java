@@ -1,0 +1,94 @@
+`java
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+// Classe Compte
+class Compte {
+    private String numero;
+    private BigDecimal solde;
+    private List<Transaction> transactions;
+
+    public Compte(String numero) {
+        this.numero = numero;
+        this.solde = BigDecimal.ZERO;
+        this.transactions = new ArrayList<>();
+    }
+
+    public String getNumero() { return numero; }
+    public BigDecimal getSolde() { return solde; }
+    public List<Transaction> getTransactions() { return transactions; }
+
+    public void ajouterTransaction(Transaction t) {
+        transactions.add(t);
+        solde = solde.add(t.getMontant());
+    }
+
+    public void retirer(BigDecimal montant) {
+        if (solde.compareTo(montant) < 0) {
+            throw new IllegalArgumentException("Solde insuffisant !");
+        }
+        transactions.add(new Transaction("RETRAIT", montant.negate()));
+        solde = solde.subtract(montant);
+    }
+}
+
+// Classe Transaction
+class Transaction {
+    private String type;
+    private BigDecimal montant;
+    private LocalDateTime date;
+
+    public Transaction(String type, BigDecimal montant) {
+        this.type = type;
+        this.montant = montant;
+        this.date = LocalDateTime.now();
+    }
+
+    public String getType() { return type; }
+    public BigDecimal getMontant() { return montant; }
+    public LocalDateTime getDate() { return date; }
+
+    @Override
+    public String toString() {
+        return date + " - " + type + " : " + montant;
+    }
+}
+
+// Service Banque
+class BanqueService {
+    public void depot(Compte c, BigDecimal montant) {
+        c.ajouterTransaction(new Transaction("DEPOT", montant));
+    }
+
+    public void retrait(Compte c, BigDecimal montant) {
+        c.retirer(montant);
+    }
+
+    public void virement(Compte source, Compte destination, BigDecimal montant) {
+        source.retirer(montant);
+        destination.ajouterTransaction(new Transaction("VIREMENT", montant));
+    }
+}
+
+// Programme principal
+public class Main {
+    public static void main(String[] args) {
+        Compte c1 = new Compte("C001");
+        Compte c2 = new Compte("C002");
+        BanqueService service = new BanqueService();
+
+        service.depot(c1, new BigDecimal("500"));
+        service.retrait(c1, new BigDecimal("200"));
+        service.virement(c1, c2, new BigDecimal("100"));
+
+        System.out.println("Solde C001: " + c1.getSolde());
+        System.out.println("Transactions C001:");
+        c1.getTransactions().forEach(System.out::println);
+
+        System.out.println("\nSolde C002: " + c2.getSolde());
+        System.out.println("Transactions C002:");
+        c2.getTransactions().forEach(System.out::println);
+    }
+}
